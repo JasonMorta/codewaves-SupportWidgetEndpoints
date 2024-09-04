@@ -5,26 +5,18 @@ from middleware import main_middleware
 from aiohttp_middlewares import error_middleware, timeout_middleware
 
 def create_app():
-    
-       # Define allowed origins
-    cors_config = {
-        "*": {  # Replace * with specific domain e.g., 'https://example.com'
-            "allow_credentials": True,
-            "allow_methods": ["GET"],  # Specify allowed HTTP methods
-            "allow_headers": ["api-key", "date", "Content-Type"],  # Allowed headers
-        }
-    }
-    
     # Create the application
     app = web.Application()
 
     # Add middleware to all routes
     app.middlewares.append(main_middleware)
 
-    # Add CORS middleware with more restricted rules
+    # Add CORS middleware
     app.middlewares.append(cors_middleware(
-        allow_all=False,  # Disable allow_all
-        origins=cors_config  # Specify allowed origins and options
+        allow_all=True,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"]
     ))
 
     # Add timeout middleware

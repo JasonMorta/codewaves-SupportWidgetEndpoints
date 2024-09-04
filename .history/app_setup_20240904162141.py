@@ -11,7 +11,7 @@ def create_app():
         "*": {  # Replace * with specific domain e.g., 'https://example.com'
             "allow_credentials": True,
             "allow_methods": ["GET"],  # Specify allowed HTTP methods
-            "allow_headers": ["api-key", "date", "Content-Type"],  # Allowed headers
+            "allow_headers": ["Authorization", "api-key", "date" ],  # Allowed headers
         }
     }
     
