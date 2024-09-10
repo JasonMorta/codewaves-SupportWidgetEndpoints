@@ -3,10 +3,6 @@ from collections import defaultdict
 import aiohttp
 import urllib.parse
 
-
-#dataStamp = "2024-09-01"
-
-
 # Fetch tickets from Freshdesk API
 async def fetch_tickets(session, page, dateStamp):
     url = f"https://newaccount1627234890025.freshdesk.com/api/v2/tickets?updated_since={dateStamp}T00:00:00Z&order_by=created_at&order_type=asc&per_page=100&page={page}"
@@ -23,15 +19,19 @@ async def fetch_tickets(session, page, dateStamp):
         async with session.get(url, headers=headers) as response:
             response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
             
-            # Check if the response status code indicates authentication issues
             if response.status == 401:
                 print("Authentication failed: Invalid credentials.")
+                return None
+            
+            if response.status == 400:
+                print(f"Bad Request: Invalid date format. response: {response}")
                 return None
             
             return await response.json()
     
     except aiohttp.ClientResponseError as http_err:
-        print(f"HTTP error occurred: {http_err}")
+        print(f"HTTP error occurred: {http_err}, response: {response}")
+        return None
     except aiohttp.ClientError as req_err:
         print(f"Request error occurred: {req_err}")
     except Exception as err:
@@ -53,12 +53,12 @@ async def fetch_agents(session):
         async with session.get(url, headers=headers) as response:
             response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
             
-            # Check if the response status code indicates authentication issues
             if response.status == 401:
                 print("Authentication failed: Invalid credentials.")
                 return None
-            
-            return await response.json()
+            agents = await response.json()
+            print(f"{len(agents)} agents fetched.")
+            return agents
     
     except aiohttp.ClientResponseError as http_err:
         print(f"HTTP error occurred: {http_err}")
@@ -70,47 +70,66 @@ async def fetch_agents(session):
     return []  # Return an empty list in case of error
 
 async def fetch_all_tickets(session, dateStamp):
+    print(f"🏳️ Fetching all tickets since: {dateStamp}...")
     page = 1
     all_tickets = []
+    error_details = None
 
     while True:
-        tickets = await fetch_tickets(session, page, dateStamp)
+        try:
+            tickets = await fetch_tickets(session, page, dateStamp)
 
-        if tickets is None:  # Authentication failed
-            return []
-        
-        if len(tickets) < 100:  # Stop if the response length is less than 100
+            if tickets is None:  # Authentication failed
+                return [], "Authentication failure or no tickets."
+
+            if len(tickets) < 100:  # Stop if the response length is less than 100
+                all_tickets.extend(tickets)
+                print(f"Fetched all tickets up to page {page}. Total tickets: {len(all_tickets)}")
+                break
+
             all_tickets.extend(tickets)
-            print(f"Fetched all tickets up to page {page}. Total tickets: {len(all_tickets)}")
-            break
-        
-        all_tickets.extend(tickets)
-        print(f"Page {page} fetched. Total tickets so far: {len(all_tickets)}")
-        page += 1  # Move to the next page
+            print(f"Page {page} fetched. Total tickets so far: {len(all_tickets)}")
+            page += 1  # Move to the next page
 
-    return all_tickets
+        except Exception as err:
+            print(f"An error occurred while fetching tickets: {err}")
+            error_details = str(err)
+            break
+
+    return all_tickets, error_details
+
 
 async def get_req(request):
-    dateStamp = request.headers.get('date')
-    print(f"date: {dateStamp}")
+    dateStamp = request.headers.get('date_req')
+    print(f"🔞 DATE: {dateStamp}")
 
-    
     async with ClientSession() as session:
-        all_tickets = await fetch_all_tickets(session, dateStamp)
+        # Fetch tickets
+        all_tickets, ticket_error = await fetch_all_tickets(session, dateStamp)
+
+        # If there was an error fetching tickets, return the error response
+        if not all_tickets:
+            error_message = f"Failed to fetch tickets. Date: {dateStamp}. Error: {ticket_error or 'No tickets found.'}"
+            return web.Response(text=error_message, status=500)
+
+        # Fetch agents only if fetching tickets was successful
         agents = await fetch_agents(session)
 
-    if not all_tickets:
-        return web.Response(text="Failed to fetch tickets.", status=500)
-    
-    if not agents:
-        return web.Response(text="Failed to fetch agents.", status=500)
+        # If fetching agents failed, return an error response
+        if not agents:
+            return web.Response(text="Failed to fetch agents.", status=500)
 
-    responder_ticket_count = defaultdict(int)
+    # Continue processing only if both tickets and agents were successfully fetched
+    responder_ticket_map = defaultdict(list)
 
+    # Group tickets by agent ID
     for ticket in all_tickets:
-        if ticket["status"] in [4, 5] and ticket["responder_id"] is not None and ticket["created_at"] >= dateStamp:
-            responder_id = ticket["responder_id"]
-            responder_ticket_count[responder_id] += 1
+        if isinstance(ticket, dict):  # Ensure the ticket is a dictionary
+            if ticket.get("status") in [4, 5] and ticket.get("responder_id") is not None and ticket.get("updated_at") >= dateStamp:
+                responder_id = ticket["responder_id"]
+                responder_ticket_map[responder_id].append(ticket)
+        else:
+            print(f"Unexpected ticket format: {ticket}")
 
     agent_map = {agent["id"]: agent["contact"]["name"] for agent in agents}
 
@@ -118,9 +137,10 @@ async def get_req(request):
         {
             "responder_id": responder_id,
             "name": agent_map.get(responder_id, "Unknown"),
-            "tickets_completed": count
+            "tickets_completed": len(tickets),  # Count the number of completed tickets
+            "ticket_items": tickets  # List of all tickets for this agent
         }
-        for responder_id, count in responder_ticket_count.items()
+        for responder_id, tickets in responder_ticket_map.items()
     ]
     
     return web.json_response(result)

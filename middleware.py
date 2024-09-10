@@ -15,11 +15,20 @@ async def main_middleware(app, handler):
             print(f"🟢Content type: {request.content_type}")
             print(f"🟢Content length: {request.content_length}")
             
-            
+            # Handle CORS preflight requests (OPTIONS)
+            if request.method == 'OPTIONS':
+                headers = {
+                    "Access-Control-Allow-Origin": "*",  # Or specific domain 'http://localhost:5173'
+                    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+                    "Access-Control-Allow-Headers": "api-key, Content-Type, Authorization, date_req",
+                }
+                return web.Response(status=200, headers=headers)
             
 
             # check headers 'api-key' == '123'
             if request.headers.get('api-key') == '123':
+                
+ 
                 
                 try:
                  # Call the CORS middleware handler
