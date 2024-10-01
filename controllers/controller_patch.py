@@ -1,13 +1,13 @@
-from aiohttp import web
+# from aiohttp import web
 
-async def patch_req(request):
-    # Logic to handle PATCH request
-    # Example: Update specific fields of a resource
-    data = await request.json()  # Assuming JSON data is sent in the request body
-    print(data)
-    # Apply partial updates to the resource
-    # Update the resource based on the data received
-    return web.Response(text="Resource patched successfully")
+# async def patch_req(request):
+#     # Logic to handle PATCH request
+#     # Example: Update specific fields of a resource
+#     data = await request.json()  # Assuming JSON data is sent in the request body
+#     print(data)
+#     # Apply partial updates to the resource
+#     # Update the resource based on the data received
+#     return web.Response(text="Resource patched successfully")
 
 
 """ 

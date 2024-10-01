@@ -1,12 +1,11 @@
-from aiohttp import web
+from flask import Flask
 from routes import setup_routes
 
 def create_app():
-    # Create the application
-    app = web.Application()
+    # Create the Flask app
+    app = Flask(__name__)
 
     # Setup routes
     setup_routes(app)
 
-    # Return the configured app
     return app

@@ -1,15 +1,15 @@
-from aiohttp import web
+# from aiohttp import web
 
-async def head_req(request):
-    # Logic to handle HEAD request
-    # Typically, you would check the existence of a resource or retrieve metadata without returning the body
-    # Example: Check if a resource exists
-    # Check the existence of the resource
-    resource_exists = True  # Placeholder, replace with actual logic
-    if resource_exists:
-        return web.Response(status=200)  # Resource exists
-    else:
-        return web.Response(status=404)  # Resource not found
+# async def head_req(request):
+#     # Logic to handle HEAD request
+#     # Typically, you would check the existence of a resource or retrieve metadata without returning the body
+#     # Example: Check if a resource exists
+#     # Check the existence of the resource
+#     resource_exists = True  # Placeholder, replace with actual logic
+#     if resource_exists:
+#         return web.Response(status=200)  # Resource exists
+#     else:
+#         return web.Response(status=404)  # Resource not found
 
 
 """ 

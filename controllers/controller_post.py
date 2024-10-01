@@ -1,11 +1,11 @@
-from aiohttp import web
+# from aiohttp import web
 
 
-# post request to receive a message
-async def post_req(request):
+# # post request to receive a message
+# async def post_req(request):
     
-    # response to server
-    return web.Response(text="Received POST request")
+#     # response to server
+#     return web.Response(text="Received POST request")
 
 
 """ 

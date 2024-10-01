@@ -1,9 +1,9 @@
-from aiohttp import web
+# from aiohttp import web
 
-async def options_req(request):
-    # Logic to handle OPTIONS request
-    # Typically, you would return a response indicating the supported methods and other capabilities
-    return web.Response(text="Allowed methods: GET, POST, PUT, PATCH, DELETE")
+# async def options_req(request):
+#     # Logic to handle OPTIONS request
+#     # Typically, you would return a response indicating the supported methods and other capabilities
+#     return web.Response(text="Allowed methods: GET, POST, PUT, PATCH, DELETE")
 
 
 """ 
