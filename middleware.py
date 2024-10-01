@@ -8,7 +8,7 @@ async def main_middleware(app, handler):
         # # check headers 'api-key' == '123'
         # if request.headers.get('api_key') == '123':
         #     try:
-        #      # Call the CORS middleware handler
+        #      # Call the CORS middleware ler
         #         response = await handler(request)
         #         return response
         #     except asyncio.TimeoutError:
