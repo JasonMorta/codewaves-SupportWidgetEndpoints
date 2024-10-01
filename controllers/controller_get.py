@@ -100,6 +100,13 @@ async def fetch_all_tickets(session, dateStamp):
 
 
 async def get_req(request):
+    # Set CORS headers manually in the response
+    headers = {
+        'Access-Control-Allow-Origin': '*',  # Allow all origins
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',  # Allow specific methods
+        'Access-Control-Allow-Headers': 'Content-Type',  # Allow custom headers
+    }
+    
     dateStamp = request.headers.get('date_req')
     print(f"🔞 DATE: {dateStamp}")
 
@@ -143,4 +150,4 @@ async def get_req(request):
         for responder_id, tickets in responder_ticket_map.items()
     ]
     
-    return web.json_response(result)
+    return web.json_response(result, headers=headers)
