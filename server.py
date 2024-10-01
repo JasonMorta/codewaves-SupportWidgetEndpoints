@@ -100,8 +100,11 @@ def fetch_all_tickets(dateStamp):
 
 @app.route('/tickets', methods=['GET'])
 def get_tickets():
-    dateStamp = request.headers.get('date_req')
-    
+    # print('headers: ', request.headers)  # Debug print to see all headers
+    # print('request: ', request) 
+    dateStamp = request.headers.get('date-req')
+    print(f"🔞 DATE: {dateStamp}")
+
     # Check if the date_req header is provided
     if not dateStamp:
         return jsonify({"error": "The 'date_req' header is required."}), 400
