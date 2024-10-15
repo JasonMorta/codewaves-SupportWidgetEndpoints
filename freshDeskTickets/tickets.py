@@ -1,0 +1,93 @@
+import requests
+
+# Fetch tickets from Freshdesk API
+def fetch_tickets(page, dateStamp):
+    url = f"https://newaccount1627234890025.freshdesk.com/api/v2/tickets?updated_since={dateStamp}T00:00:00Z&order_by=created_at&order_type=asc&per_page=100&page={page}"
+    print('url = ', url)
+
+    bearer_token = "WXJJclVqVFhxS0VOU3pvNXJkSGc="
+
+    headers = {
+        "Authorization": f"Bearer {bearer_token}"
+    }
+
+    try:
+        print(f"Fetching page {page}...")
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raises an exception for 4xx/5xx responses
+
+        if response.status_code == 401:
+            print("Authentication failed: Invalid credentials.")
+            return None
+
+        if response.status_code == 400:
+            print(f"Bad Request: Invalid date format. response: {response}")
+            return None
+
+        return response.json()
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        return None
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request error occurred: {req_err}")
+        return []
+
+# Fetch agents from Freshdesk API
+def fetch_agents():
+    url = "https://newaccount1627234890025.freshdesk.com/api/v2/agents?per_page=100"
+    bearer_token = "WXJJclVqVFhxS0VOU3pvNXJkSGc="
+
+    headers = {
+        "Authorization": f"Bearer {bearer_token}"
+    }
+
+    try:
+        print(f"Fetching agents...")
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        if response.status_code == 401:
+            print("Authentication failed: Invalid credentials.")
+            return None
+
+        agents = response.json()
+        print(f"{len(agents)} agents fetched.")
+        return agents
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Request error occurred: {req_err}")
+
+    return []
+
+# Fetch all tickets from Freshdesk API
+def fetch_all_tickets(dateStamp):
+    print(f"🏳️ Fetching all tickets since: {dateStamp}...")
+    page = 1
+    all_tickets = []
+    error_details = None
+
+    while True:
+        try:
+            tickets = fetch_tickets(page, dateStamp)
+
+            if tickets is None:
+                return [], "Authentication failure or no tickets."
+
+            if len(tickets) < 100:  # Stop if fewer than 100 tickets are returned
+                all_tickets.extend(tickets)
+                print(f"Fetched all tickets up to page {page}. Total tickets: {len(all_tickets)}")
+                break
+
+            all_tickets.extend(tickets)
+            print(f"Page {page} fetched. Total tickets so far: {len(all_tickets)}")
+            page += 1
+
+        except Exception as err:
+            print(f"An error occurred while fetching tickets: {err}")
+            error_details = str(err)
+            break
+
+    return all_tickets, error_details

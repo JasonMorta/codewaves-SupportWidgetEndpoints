@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from freshDeskTickets.tickets import fetch_all_tickets, fetch_agents
+from freshDesk.tickets import fetch_all_tickets, fetch_agents
 from collections import defaultdict
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
@@ -71,7 +71,6 @@ def fetch_and_store_data(period='monthly'):
 
     try:
         # Fetch Tickets
-        print(f"🌋 Fetching all tickets since...")
         tickets, ticket_error = fetch_all_tickets(date_stamp)
         if tickets:
             data['tickets'] = tickets
@@ -129,19 +128,12 @@ def get_tickets():
     current_day_date = get_current_day_date()
 
     with data_lock:
-        # Prioritize error response
-        if monthly_data['error'] or daily_data['error']:
-            # Determine which period the error corresponds to
-            if date_req == month_start_date and monthly_data['error']:
-                return jsonify({"error": monthly_data['error']}), 500
-            elif date_req == current_day_date and daily_data['error']:
-                return jsonify({"error": daily_data['error']}), 500
-
-        # Determine the period based on date_req
         if date_req == month_start_date:
+            # Handle Monthly Tickets
             data = monthly_data
             period = 'monthly'
         elif date_req == current_day_date:
+            # Handle Daily Tickets
             data = daily_data
             period = 'daily'
         else:
@@ -151,7 +143,11 @@ def get_tickets():
         if data['fetch_in_progress'] or not data['tickets'] or not data['agents']:
             return jsonify({"message": "Data is being fetched. Please try again later."}), 202
 
-        # At this point, data is available and no errors
+        # Check for errors
+        if data['error']:
+            return jsonify({"error": data['error']}), 500
+
+        # Copy data to avoid race conditions
         tickets = data['tickets'].copy()
         agents = data['agents'].copy()
 
@@ -160,29 +156,14 @@ def get_tickets():
         # Create a map of agent_id to agent_name for quick lookup
         agent_map = {agent["id"]: agent["contact"]["name"] for agent in agents}
 
-        # Prepare date_req as datetime for comparison
-        date_req_dt = datetime.datetime.strptime(date_req, '%Y-%m-%d')
-
         # Group tickets by responder_id
         responder_ticket_map = defaultdict(list)
         for ticket in tickets:
             if isinstance(ticket, dict):
-                try:
-                    # Parse 'updated_at' to datetime object
-                    # Assuming 'updated_at' is in ISO 8601 format
-                    ticket_updated_at = datetime.datetime.strptime(
-                        ticket.get("updated_at", ""), "%Y-%m-%dT%H:%M:%S%z"
-                    )
-                except ValueError:
-                    # Handle tickets with invalid 'updated_at' format
-                    logger.warning(f"Invalid 'updated_at' format for ticket ID {ticket.get('id')}. Skipping.")
-                    continue
-
-                # Compare dates (ignoring time)
                 if (
                     ticket.get("status") in [4, 5]
                     and ticket.get("responder_id") is not None
-                    and ticket_updated_at.date() >= date_req_dt.date()
+                    and ticket.get("updated_at") >= date_req
                 ):
                     responder_id = ticket["responder_id"]
                     responder_ticket_map[responder_id].append(ticket)
@@ -192,10 +173,10 @@ def get_tickets():
             {
                 "responder_id": responder_id,
                 "name": agent_map.get(responder_id, "Unknown"),
-                "tickets_completed": len(responder_tickets),
-                "ticket_items": responder_tickets
+                "tickets_completed": len(tickets),
+                "ticket_items": tickets
             }
-            for responder_id, responder_tickets in responder_ticket_map.items()
+            for responder_id, tickets in responder_ticket_map.items()
         ]
 
         return jsonify(result), 200
