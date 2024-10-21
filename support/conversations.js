@@ -28,7 +28,6 @@ async function fetchAgentConversationData(agentId, startDate, endDate) {
     }
 
     return await response.json();
-
   } catch (error) {
     console.error('Error fetching agent conversation data:', error);
     throw error; // Re-throw the error after logging

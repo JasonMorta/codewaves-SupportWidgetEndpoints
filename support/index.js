@@ -33,7 +33,7 @@ app.get('/conversations', async (req, res) => {
 
   try {
    // const data = await fetchAgentConversationData(req.query.agentId, req.query.startDate, req.query.endDate);
-   const data = await fetchAgentConversationData("842946f3-06fa-4edd-ab0d-7f88d554efd6", "2024-10-01T01:00", "2024-10-21T23:59");
+   const data = await fetchAgentConversationData("842946f3-06fa-4edd-ab0d-7f88d554efd6", "2024-10-01T01:00", "2024-10-21T23:58");
 
     res.json(data);
   } catch (error) {
