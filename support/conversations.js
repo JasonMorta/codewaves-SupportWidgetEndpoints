@@ -2,7 +2,7 @@ async function fetchAgentConversationData(agentId, startDate, endDate) {
   // Validate the agentId
   console.log(`%c Fetching Agent Conversations metrics`, 'color: #2196f3')
   console.table({ agentId, startDate, endDate });
-
+ 
   // set the dat  in ' ${startDate}:00.000Z' format
   //const now = new Date();
   const startOfMonth = `${startDate}:00.000Z` //new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
